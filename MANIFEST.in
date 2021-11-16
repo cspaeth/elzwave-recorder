@@ -1,0 +1,3 @@
+graft recorder/static
+graft recorder/templates
+global-exclude *.pyc

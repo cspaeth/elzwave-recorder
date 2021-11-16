@@ -1,0 +1,6 @@
+Flask
+gpiozero
+PyAudio
+tkgpio
+pydub
+dropbox

@@ -1,0 +1,17 @@
+env/
+record/
+*.pyc
+__pycache__/
+
+instance/
+
+.pytest_cache/
+
+dist/
+build/
+*.egg-info/
+
+
+# User-specific stuff:
+.idea/
+*.iml

@@ -15,3 +15,4 @@ build/
 # User-specific stuff:
 .idea/
 *.iml
+recorder.sh

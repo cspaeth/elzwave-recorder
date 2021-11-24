@@ -1,26 +1,30 @@
+import logging
+from logging.handlers import SysLogHandler
+
 from signal import pause
 
 from gpiozero import LED, Button
-from flask import Flask
 
+from recorder import config
 from recorder.recorder import SessionRecorder
 
+handlers=[logging.StreamHandler()]
+if config.LOG_TARGET:
+    handlers.append(SysLogHandler(address=config.LOG_TARGET))
 
-#app = Flask(__name__)
+
+logging.basicConfig(level=logging.INFO,
+                    format="%(name)s:%(asctime)s %(thread)s [%(levelname)s] %(message)s",
+                    handlers=handlers)
+
+log = logging.getLogger("recorder")
 recorder = SessionRecorder()
-
-
-# @app.route("/")
-# def index():
-#     pass
-
-
 triggered = False
 
 
 def main():
     def action(long=False):
-        print(f"button pressed (long={long})")
+        log.info(f"button pressed (long={long})")
         if not recorder.is_recording():
             recorder.record(pre_capture=long)
             status_led.blink(off_time=0.5, on_time=0.5)
@@ -37,21 +41,20 @@ def main():
         global triggered
 
         if not triggered:
-            print("Short")
+            log.info("Button pressed (short)")
             action()
         else:
-            print("Long")
+            log.info("Button pressed (short)")
             action(long=True)
         triggered = False
 
     status_led = LED(17)
-    button = Button(2, hold_time=2.5)
+    button = Button(2, hold_time=2)
     status_led.on()
     button.when_held = button_held
     button.when_released = button_released
 
     pause()
-    # app.run()
 
 
 if __name__ == '__main__':

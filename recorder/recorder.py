@@ -16,10 +16,9 @@ from pydub import effects, AudioSegment
 
 from recorder import config
 
-log = logging.getLogger(__name__)
+log = logging.getLogger("recorder")
 
-
-PREBUFFER_SIZE = config.AUDIO_SAMPLE_RATE / config.AUDIO_CHUNK_SIZE * config.AUDIO_PRERECORD_LENGTH
+BUFFER_SIZE = config.AUDIO_SAMPLE_RATE / config.AUDIO_CHUNK_SIZE * config.AUDIO_PRERECORD_LENGTH
 
 API_HEADERS = {'Authorization': f'Token {config.API_TOKEN}'}
 
@@ -41,6 +40,7 @@ class CaptureThread(Thread):
     input: Stream
 
     def run(self):
+        log.info(f"Starting Recorder ({config.AUDIO_SAMPLE_RATE}/{config.AUDIO_BIT_RATE}, {config.AUDIO_CHANNELS} Ch)")
         self.pyaudio = pyaudio.PyAudio()
 
         while True:
@@ -64,7 +64,7 @@ class CaptureThread(Thread):
         stream.close()
 
     def record(self, prerecord_buffer, stream):
-        print(f"Recording to {self.filename}")
+        log.info(f"Recording to {self.filename}")
         with self.wave_out(self.filename) as out:
             if self.keep_prerecording:
                 self.keep_prerecording = False
@@ -74,12 +74,12 @@ class CaptureThread(Thread):
                 out.writeframes(stream.read(config.AUDIO_CHUNK_SIZE, exception_on_overflow=False))
 
     def pre_record(self, stream):
-        print("Buffering")
+        log.info("Buffering")
         prerecord_buffer = []
         while not self.recording:
             data = stream.read(config.AUDIO_CHUNK_SIZE, exception_on_overflow=False)
             prerecord_buffer.append(data)
-            if len(prerecord_buffer) > PREBUFFER_SIZE:
+            if len(prerecord_buffer) > BUFFER_SIZE:
                 prerecord_buffer.pop(0)
         return prerecord_buffer
 
@@ -118,11 +118,11 @@ class CaptureThread(Thread):
             device_info = self.pyaudio.get_device_info_by_host_api_device_index(0, i)
             if device_info.get('maxInputChannels') < config.AUDIO_CHANNELS:
                 continue  # Ignore interfaces with to few inputs
-            if device_info.get('name').startswith(config.AUDIO_DEVICE):
-                print(f"Found Device: {device_info.get('name')}")
+            if config.AUDIO_DEVICE and device_info.get('name').startswith(config.AUDIO_DEVICE):
+                log.info(f"Found Device: {device_info.get('name')}")
                 return i  # Found match - return index
             if first is None:
-                print(f"Fallback Device: {device_info.get('name')}")
+                log.info(f"Fallback Device: {device_info.get('name')}")
                 first = i  # Remember first interface with enough input channels
         return first
 
@@ -156,7 +156,7 @@ class SessionRecorder:
 
     def update_session_context(self):
         if not config.API_TOKEN:
-            print("No API_TOKEN configured - using default profile")
+            log.info("No API_TOKEN configured - using default profile")
             return
 
         result = requests.get(config.API_URL, headers=API_HEADERS)
@@ -179,22 +179,23 @@ class SessionRecorder:
         raw = AudioSegment.from_file(source)
         filename = os.path.basename(source)
         target = os.path.join(config.PROCESS_DIR, os.path.splitext(filename)[0] + ".mp3")
-        print(f"Processing {source} to {target}")
+        log.info(f"Processing {source} to {target}")
         normalized = effects.normalize(raw)
         normalized.export(target, format='mp3')
         return target
 
     def upload(self, file, path):
         if not config.DROPBOX_TOKEN:
-            print("No dropbox token configured - skipping upload ")
+            log.info("No dropbox token configured - skipping upload ")
             return
 
-        print(f"Uploading {file} to {path}")
+        log.info(f"Uploading {file} to {path}")
         filename = os.path.basename(file)
 
         with dropbox.Dropbox(config.DROPBOX_TOKEN) as db:
             with open(file, 'rb') as f:
                 db.files_upload(f.read(), os.path.join(path, filename))
+            log.info(f"Upload Completed ({file} to {path})")
 
     def is_recording(self):
         return self.recoder.is_recording()

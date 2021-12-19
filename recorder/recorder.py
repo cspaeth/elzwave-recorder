@@ -179,9 +179,10 @@ class SessionRecorder:
         raw = AudioSegment.from_file(source)
         filename = os.path.basename(source)
         target = os.path.join(config.PROCESS_DIR, os.path.splitext(filename)[0] + ".mp3")
-        log.info(f"Processing {source} to {target}")
+        log.info(f"Converting {source} to {target}")
         normalized = effects.normalize(raw)
         normalized.export(target, format='mp3')
+        log.info(f"Done converting to {target}")
         return target
 
     def upload(self, file, path):

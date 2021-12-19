@@ -24,7 +24,6 @@ triggered = False
 
 def main():
     def action(long=False):
-        log.info(f"button pressed (long={long})")
         if not recorder.is_recording():
             recorder.record(pre_capture=long)
             status_led.blink(off_time=0.5, on_time=0.5)
@@ -44,7 +43,7 @@ def main():
             log.info("Button pressed (short)")
             action()
         else:
-            log.info("Button pressed (short)")
+            log.info("Button pressed (long)")
             action(long=True)
         triggered = False
 

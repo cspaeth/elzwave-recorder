@@ -1,0 +1,13 @@
+[Unit]
+Description=Papertrail
+After=systemd-journald.service
+Requires=systemd-journald.service
+
+[Service]
+ExecStart=/bin/sh -c "journalctl -u recorder.service -f | ncat --ssl logs.papertrailapp.com 15463"
+TimeoutStartSec=0
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

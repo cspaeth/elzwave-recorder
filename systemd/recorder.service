@@ -6,7 +6,10 @@ After=multi-user.target
 User=pi
 WorkingDirectory=/home/pi
 Type=idle
-ExecStart=/home/pi/recorder.sh
+ExecStart=/home/pi/elzwave-recorder/recorder.sh
+Restart=always
+RestartSec=10s
+StandardError=null
 
 [Install]
 WantedBy=multi-user.target
